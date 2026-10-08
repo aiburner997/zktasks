@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZKtasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1c2128;
+    --panel: rgba(36, 42, 51, 0.82);
+    --panel-solid: #242a33;
+    --panel-2: rgba(43, 50, 60, 0.92);
+    --border: #3a4250;
+    --text: #e6e8eb;
+    --text-dim: #8d97a5;
+    --accent-task: #5fb0ff;
+    --accent-task-dim: #2c405a;
+    --accent-event: #e8a94f;
+    --accent-event-dim: #4a3c24;
+    --accent-warm: #f08fb0;
+    --danger: #e0616f;
+    --danger-dim: #4a2a30;
+    --focus: #7dc4ff;
+    --today-ring: #5fb0ff;
+    --shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5;
+    --panel: rgba(255, 255, 255, 0.78);
+    --panel-solid: #ffffff;
+    --panel-2: rgba(244, 245, 247, 0.92);
+    --border: #d4dae2;
+    --text: #1c2128;
+    --text-dim: #5b6472;
+    --accent-task-dim: #dcebfb;
+    --accent-event-dim: #fbeada;
+    --danger-dim: #fadde0;
+    --shadow: 0 10px 30px rgba(30, 40, 70, 0.12);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c2128;
+    --panel: rgba(36, 42, 51, 0.82);
+    --panel-solid: #242a33;
+    --panel-2: rgba(43, 50, 60, 0.92);
+    --border: #3a4250;
+    --text: #e6e8eb;
+    --text-dim: #8d97a5;
+    --accent-task-dim: #2c405a;
+    --accent-event-dim: #4a3c24;
+    --danger-dim: #4a2a30;
+    --shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --bg: #eef1f5;
+      --panel: rgba(255, 255, 255, 0.78);
+      --panel-solid: #ffffff;
+      --panel-2: rgba(244, 245, 247, 0.92);
+      --border: #d4dae2;
+      --text: #1c2128;
+      --text-dim: #5b6472;
+      --accent-task-dim: #dcebfb;
+      --accent-event-dim: #fbeada;
+      --danger-dim: #fadde0;
+      --shadow: 0 10px 30px rgba(30, 40, 70, 0.12);
+      color-scheme: light;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* ---- Animated welcoming background ---- */
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.32;
+    will-change: transform;
+  }
+  .blob1 {
+    width: 420px; height: 420px;
+    background: var(--accent-task);
+    top: -140px; left: -120px;
+    animation: floatA 28s ease-in-out infinite alternate;
+  }
+  .blob2 {
+    width: 400px; height: 400px;
+    background: var(--accent-event);
+    bottom: -160px; right: -100px;
+    animation: floatB 34s ease-in-out infinite alternate;
+  }
+  .blob3 {
+    width: 320px; height: 320px;
+    background: var(--accent-warm, #f08fb0);
+    top: 38%; left: 58%;
+    animation: floatC 24s ease-in-out infinite alternate;
+  }
+  @keyframes floatA { from { transform: translate(0,0) scale(1); } to { transform: translate(70px,50px) scale(1.18); } }
+  @keyframes floatB { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-40px) scale(1.12); } }
+  @keyframes floatC { from { transform: translate(0,0) scale(1); } to { transform: translate(-50px,60px) scale(0.88); } }
+  @media (prefers-reduced-motion: reduce) {
+    .blob { animation: none !important; }
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: var(--bg);
+  }
+  .brand-block { line-height: 1.3; }
+  .brand { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 17px; }
+  .brand span { color: var(--accent-task); }
+  .brand-sub { font-size: 11px; color: var(--text-dim); }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .date-readout { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); margin-right: 4px; }
+
+  button.pill-toggle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button.pill-toggle:hover { border-color: var(--accent-task); color: var(--accent-task); }
+  button.pill-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  button.pill-toggle.active { border-color: var(--accent-task); color: var(--accent-task); background: var(--accent-task-dim); }
+
+  main {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 16px;
+    max-width: 1080px;
+    margin: 22px auto;
+    padding: 0 16px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; margin: 16px auto; }
+  }
+
+  .panel {
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 18px 18px 20px;
+    min-width: 0;
+  }
+
+  .achievements-wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto 22px; padding: 0 16px; }
+
+  .panel-head {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .panel-head .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .panel-head.tasks .dot { background: var(--accent-task); }
+  .panel-head.cal .dot { background: var(--accent-event); }
+  .panel-head .count { color: var(--text-dim); font-weight: 400; }
+
+  /* ---- Callout boxes: Due Soon / Happening Soon ---- */
+  .callout {
+    border: 1px solid var(--danger);
+    background: var(--danger-dim);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .callout.calm { border-color: var(--accent-event); background: var(--accent-event-dim); }
+  .callout.neutral { border-color: var(--border); background: var(--panel-2); }
+  .callout-head {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .callout ul.list { margin: 0; }
+  .callout .item { background: var(--panel-solid); }
+  .callout-empty { font-size: 12.5px; color: var(--text-dim); }
+
+  /* ---- Lists ---- */
+  ul.list { list-style: none; margin: 0; padding: 0; }
+
+  li.item {
+    display: flex;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    border-radius: 12px;
+    margin-bottom: 7px;
+    flex-wrap: wrap;
+  }
+
+  .checkbox {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    min-width: 17px;
+    border: 1.5px solid var(--text-dim);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .checkbox:checked { background: var(--accent-task); border-color: var(--accent-task); }
+  .checkbox:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 4px; height: 8px;
+    border: solid var(--panel-solid);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .checkbox:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .item-text { flex: 1; min-width: 0; font-size: 14px; word-break: break-word; }
+  .item-text.done { color: var(--text-dim); text-decoration: line-through; }
+
+  button.del {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button.del:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
+  button.del:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .empty { font-size: 13px; color: var(--text-dim); padding: 10px 10px; border: 1px dashed var(--border); border-radius: 12px; }
+
+  form.add-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+  input[type="text"], input[type="date"], input[type="time"] {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 9px;
+    min-width: 0;
+  }
+  input[type="text"] { flex: 1; min-width: 100px; }
+  input[type="date"] { flex-shrink: 0; width: 134px; }
+  input[type="time"] { flex-shrink: 0; width: 110px; }
+  input:focus-visible, input:focus { outline: none; border-color: var(--accent-task); }
+
+  .time-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--accent-task-dim);
+    color: var(--accent-task);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .time-badge.event { background: var(--accent-event-dim); color: var(--accent-event); }
+  .time-badge.today { background: var(--accent-event-dim); color: var(--accent-event); }
+  .time-badge.overdue { background: var(--danger-dim); color: var(--danger); }
+  .time-badge.allday { background: var(--panel-solid); color: var(--text-dim); border: 1px solid var(--border); }
+  .time-badge.clickable { cursor: pointer; }
+  .time-badge.clickable:hover { filter: brightness(1.15); }
+
+  .countdown {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background: var(--panel-solid);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    min-width: 92px;
+    text-align: center;
+  }
+  .countdown.overdue, .countdown.urgent { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+  .countdown.ongoing { background: var(--accent-event-dim); color: var(--accent-event); border-color: var(--accent-event); }
+
+  button.add {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--accent-task-dim);
+    color: var(--accent-task);
+    border: 1px solid var(--accent-task);
+    border-radius: 9px;
+    padding: 8px 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  button.add:hover { filter: brightness(1.15); }
+  button.add:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  button.add.event-btn {
+    background: var(--accent-event-dim);
+    color: var(--accent-event);
+    border-color: var(--accent-event);
+  }
+
+  /* ---- Calendar ---- */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cal-month-label { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+  .cal-nav-btns { display: flex; gap: 4px; }
+  button.nav-btn {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button.nav-btn:hover { border-color: var(--accent-task); color: var(--accent-task); }
+  button.nav-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+  }
+  .cal-weekdays div {
+    background: var(--panel-solid);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    padding: 4px 0;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+  }
+
+  .cal-cell {
+    background: var(--panel-2);
+    min-height: 58px;
+    padding: 4px 5px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .cal-cell:hover { background: var(--accent-task-dim); }
+  .cal-cell.other-month { color: var(--text-dim); opacity: 0.45; }
+  .cal-cell.selected { outline: 2px solid var(--accent-task); outline-offset: -2px; }
+  .cal-daynum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-cell.is-today .cal-daynum {
+    background: var(--today-ring);
+    color: var(--panel-solid);
+    border-radius: 50%;
+    font-weight: 700;
+  }
+  .cal-dots { display: flex; gap: 3px; flex-wrap: wrap; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-event); flex-shrink: 0; }
+  .cal-dot.task { background: var(--accent-task); }
+  .cal-more { font-size: 9.5px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+  .day-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .day-panel-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .day-panel .item { background: var(--panel-solid); }
+  .day-subhead {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    margin: 10px 0 6px;
+  }
+
+  /* ---- Achievements ---- */
+  .ach-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .ach-card {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel-2);
+    transition: opacity 0.2s;
+  }
+  .ach-card.locked { opacity: 0.5; }
+  .ach-icon { font-size: 22px; line-height: 1.1; }
+  .ach-name { font-weight: 600; font-size: 13px; }
+  .ach-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .ach-status { font-size: 11px; color: var(--accent-event); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+  .ach-progress { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+  .achievement-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel-solid);
+    border: 1px solid var(--accent-event);
+    border-radius: 999px;
+    padding: 10px 18px 10px 12px;
+    box-shadow: var(--shadow);
+    z-index: 50;
+    max-width: 90vw;
+  }
+  .achievement-toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast-icon { font-size: 22px; }
+  .toast-title { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-dim); }
+  .toast-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blobs" aria-hidden="true">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+
+<header>
+  <div class="brand-block">
+    <div class="brand">ZK<span>tasks</span></div>
+    <div class="brand-sub">stay on top of your day, gently</div>
+  </div>
+  <div class="header-right">
+    <div class="date-readout" id="todayReadout"></div>
+    <button class="pill-toggle" id="achievementsToggle" type="button">🏆</button>
+    <button class="pill-toggle" id="musicToggle" type="button"></button>
+    <button class="pill-toggle" id="themeToggle" type="button"></button>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-head cal"><span class="dot"></span>Calendar</div>
+
+    <div class="callout calm" id="soonEventsCallout">
+      <div class="callout-head" id="soonEventsHead"></div>
+      <ul class="list" id="soonEventsList"></ul>
+    </div>
+
+    <div class="cal-nav">
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <div class="cal-nav-btns">
+        <button class="nav-btn" id="prevMonthBtn" aria-label="Previous month">&lsaquo;</button>
+        <button class="nav-btn" id="todayBtn">Today</button>
+        <button class="nav-btn" id="nextMonthBtn" aria-label="Next month">&rsaquo;</button>
+      </div>
+    </div>
+
+    <div class="cal-weekdays">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="day-panel">
+      <div class="day-panel-title" id="dayPanelTitle"></div>
+
+      <div class="day-subhead">EVENTS</div>
+      <ul class="list" id="dayEventList"></ul>
+      <form class="add-row" id="eventForm">
+        <input type="text" id="eventInput" placeholder="Add an event" autocomplete="off">
+        <input type="date" id="eventDateInput" aria-label="Event date">
+        <input type="time" id="eventTimeInput" aria-label="Event time (optional, leave blank for all day)">
+        <button type="submit" class="add event-btn">Add</button>
+      </form>
+
+      <div class="day-subhead" id="dayTasksHead">TASKS DUE</div>
+      <ul class="list" id="dayTaskList"></ul>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head tasks"><span class="dot"></span>Tasks<span class="count" id="taskCount"></span></div>
+
+    <div class="callout" id="dueSoonCallout">
+      <div class="callout-head" id="dueSoonHead"></div>
+      <ul class="list" id="dueSoonList"></ul>
+    </div>
+
+    <ul class="list" id="taskList"></ul>
+    <form class="add-row" id="taskForm">
+      <input type="text" id="taskInput" placeholder="Add a task" autocomplete="off">
+      <input type="date" id="taskDueInput" aria-label="Due date (optional)">
+      <input type="time" id="taskTimeInput" aria-label="Due time (optional)">
+      <button type="submit" class="add">Add</button>
+    </form>
+  </section>
+</main>
+
+<div class="achievements-wrap">
+  <section class="panel achievements-panel" id="achievementsPanel" hidden>
+    <div class="panel-head"><span class="dot" style="background:var(--accent-event)"></span>Achievements<span class="count" id="achCount"></span></div>
+    <div class="ach-grid" id="achGrid"></div>
+  </section>
+</div>
+
+<footer>saved locally in this browser</footer>
+
+<div class="achievement-toast" id="achievementToast">
+  <span class="toast-icon">🏆</span>
+  <div>
+    <div class="toast-title">ACHIEVEMENT UNLOCKED</div>
+    <div class="toast-name"></div>
+  </div>
+</div>
+
+<script>
+var STORAGE_KEY = "zktasks_data_v1";
+var THEME_KEY = "zktasks_theme_v1";
+var MUSIC_KEY = "zktasks_music_v1";
+var data = { tasks: [], events: [], stats: null };
+
+var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var WEEKDAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var WEEKDAYS_LONG = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+var now = new Date();
+var viewYear = now.getFullYear();
+var viewMonth = now.getMonth();
+var selectedDate = toISO(now.getFullYear(), now.getMonth(), now.getDate());
+var todayISO = selectedDate;
+
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function toISO(y, m, d) { return y + "-" + pad(m + 1) + "-" + pad(d); }
+function escapeHtml(s) {
+  var d = document.createElement("div");
+  d.innerText = s;
+  return d.innerHTML;
+}
+function formatShort(iso) {
+  var parts = iso.split("-");
+  if (parts.length !== 3) return iso;
+  var m = parseInt(parts[1], 10) - 1;
+  var d = parseInt(parts[2], 10);
+  return (MONTHS_SHORT[m] || parts[1]) + " " + d;
+}
+function formatTime12(t) {
+  if (!t) return "";
+  var parts = t.split(":");
+  var h = parseInt(parts[0], 10);
+  var m = parts[1];
+  var ampm = h >= 12 ? "PM" : "AM";
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return h12 + ":" + m + " " + ampm;
+}
+function formatDuration(ms) {
+  var totalSec = Math.max(0, Math.floor(ms / 1000));
+  var days = Math.floor(totalSec / 86400); totalSec %= 86400;
+  var hours = Math.floor(totalSec / 3600); totalSec %= 3600;
+  var mins = Math.floor(totalSec / 60);
+  var secs = totalSec % 60;
+  if (days > 0) return days + "d " + hours + "h";
+  if (hours > 0) return hours + "h " + pad(mins) + "m " + pad(secs) + "s";
+  if (mins > 0) return mins + "m " + pad(secs) + "s";
+  return secs + "s";
+}
+function countdownFor(dt, verb) {
+  var diff = dt.getTime() - now.getTime();
+  if (diff <= 0) return { text: "Overdue by " + formatDuration(-diff), cls: "overdue" };
+  var cls = diff <= 60 * 60 * 1000 ? "urgent" : "";
+  return { text: verb + " " + formatDuration(diff), cls: cls };
+}
+
+/* ---------- Theme ---------- */
+
+function applyTheme(mode) {
+  if (mode === "light" || mode === "dark") {
+    document.documentElement.setAttribute("data-theme", mode);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  var systemPrefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+  var effective = mode === "light" || mode === "dark" ? mode : (systemPrefersLight ? "light" : "dark");
+  document.getElementById("themeToggle").textContent = effective === "dark" ? "☾ Dark" : "☀ Light";
+}
+function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  applyTheme(saved);
+}
+document.getElementById("themeToggle").addEventListener("click", function () {
+  var current = document.documentElement.getAttribute("data-theme");
+  var systemPrefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+  var effective = current || (systemPrefersLight ? "light" : "dark");
+  var next = effective === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  applyTheme(next);
+});
+
+/* ---------- Ambient background music (generated, no external files) ---------- */
+
+var audioCtx = null, masterGain = null, droneOsc = null, droneGain = null, noteTimer = null, musicEnabled = false;
+var PENTATONIC = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
+
+function updateMusicButton() {
+  var btn = document.getElementById("musicToggle");
+  btn.textContent = musicEnabled ? "♪ Music: On" : "♪ Music: Off";
+  btn.classList.toggle("active", musicEnabled);
+}
+function ensureAudioGraph() {
+  if (audioCtx) return;
+  var Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audioCtx = new Ctx();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.045;
+  masterGain.connect(audioCtx.destination);
+}
+function playNote(freq, duration) {
+  if (!audioCtx) return;
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  osc.connect(g);
+  g.connect(masterGain);
+  var t = audioCtx.currentTime;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.5, t + 0.6);
+  g.gain.linearRampToValueAtTime(0, t + duration);
+  osc.start(t);
+  osc.stop(t + duration + 0.1);
+}
+function scheduleNotes() {
+  if (!musicEnabled || !audioCtx) return;
+  var freq = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)];
+  playNote(freq, 2.4);
+  noteTimer = setTimeout(scheduleNotes, 2800 + Math.random() * 1200);
+}
+function startMusic() {
+  ensureAudioGraph();
+  if (!audioCtx) return;
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (musicEnabled) return;
+  musicEnabled = true;
+  updateMusicButton();
+  droneOsc = audioCtx.createOscillator();
+  droneOsc.type = "sine";
+  droneOsc.frequency.value = 130.81;
+  droneGain = audioCtx.createGain();
+  var t = audioCtx.currentTime;
+  droneGain.gain.setValueAtTime(0, t);
+  droneGain.gain.linearRampToValueAtTime(0.35, t + 1.5);
+  droneOsc.connect(droneGain);
+  droneGain.connect(masterGain);
+  droneOsc.start();
+  scheduleNotes();
+}
+function stopMusic() {
+  musicEnabled = false;
+  updateMusicButton();
+  if (noteTimer) clearTimeout(noteTimer);
+  if (audioCtx && droneGain) {
+    var t = audioCtx.currentTime;
+    droneGain.gain.cancelScheduledValues(t);
+    droneGain.gain.setValueAtTime(droneGain.gain.value, t);
+    droneGain.gain.linearRampToValueAtTime(0, t + 0.4);
+  }
+  if (droneOsc) { try { droneOsc.stop(audioCtx.currentTime + 0.5); } catch (e) {} droneOsc = null; }
+}
+document.getElementById("musicToggle").addEventListener("click", function () {
+  if (musicEnabled) { stopMusic(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} }
+  else { startMusic(); try { localStorage.setItem(MUSIC_KEY, "on"); } catch (e) {} }
+});
+function initMusic() {
+  var pref = null;
+  try { pref = localStorage.getItem(MUSIC_KEY); } catch (e) {}
+  var wantsMusic = pref !== "off";
+  updateMusicButton();
+  if (wantsMusic) {
+    var startOnce = function () {
+      startMusic();
+      document.removeEventListener("click", startOnce);
+      document.removeEventListener("keydown", startOnce);
+      document.removeEventListener("touchstart", startOnce);
+    };
+    document.addEventListener("click", startOnce);
+    document.addEventListener("keydown", startOnce);
+    document.addEventListener("touchstart", startOnce);
+  }
+}
+
+/* ---------- Achievements ---------- */
+
+var ACHIEVEMENTS = [
+  { id: "first_step", icon: "🌱", name: "First Step", desc: "Complete your first task.", target: 1, metric: function (s) { return s.tasksCompleted; } },
+  { id: "gtd5", icon: "✅", name: "Getting Things Done", desc: "Complete 5 tasks.", target: 5, metric: function (s) { return s.tasksCompleted; } },
+  { id: "task_master", icon: "🎯", name: "Task Master", desc: "Complete 25 tasks.", target: 25, metric: function (s) { return s.tasksCompleted; } },
+  { id: "unstoppable", icon: "🔥", name: "Unstoppable", desc: "Complete 50 tasks.", target: 50, metric: function (s) { return s.tasksCompleted; } },
+  { id: "legendary", icon: "👑", name: "Legendary", desc: "Complete 100 tasks.", target: 100, metric: function (s) { return s.tasksCompleted; } },
+  { id: "inbox_zero", icon: "📭", name: "Inbox Zero", desc: "Clear every open task at once.", target: 1, metric: function (s) { return s.inboxZeroHit ? 1 : 0; } },
+  { id: "early_bird", icon: "🌅", name: "Early Bird", desc: "Complete a task before 8 AM.", target: 1, metric: function (s) { return s.earlyBirdHit ? 1 : 0; } },
+  { id: "planner", icon: "🗓️", name: "Planner", desc: "Add 10 events to the calendar.", target: 10, metric: function (s) { return s.eventsAdded; } }
+];
+
+var toastQueue = [], toastShowing = false;
+function queueToast(ach) { toastQueue.push(ach); if (!toastShowing) showNextToast(); }
+function showNextToast() {
+  if (toastQueue.length === 0) { toastShowing = false; return; }
+  toastShowing = true;
+  var ach = toastQueue.shift();
+  var el = document.getElementById("achievementToast");
+  el.querySelector(".toast-icon").textContent = ach.icon;
+  el.querySelector(".toast-name").textContent = ach.name;
+  el.classList.add("show");
+  setTimeout(function () {
+    el.classList.remove("show");
+    setTimeout(showNextToast, 400);
+  }, 3200);
+}
+
+function evaluateAchievements(announce) {
+  var changed = false;
+  ACHIEVEMENTS.forEach(function (a) {
+    if (!data.stats.unlocked[a.id] && a.metric(data.stats) >= a.target) {
+      data.stats.unlocked[a.id] = new Date().toISOString();
+      changed = true;
+      if (announce) queueToast(a);
+    }
+  });
+  if (changed) save();
+  renderAchievements();
+}
+
+function renderAchievements() {
+  var unlockedCount = 0;
+  var html = ACHIEVEMENTS.map(function (a) {
+    var val = Math.min(a.metric(data.stats), a.target);
+    var unlocked = !!data.stats.unlocked[a.id];
+    if (unlocked) unlockedCount++;
+    return (
+      '<div class="ach-card ' + (unlocked ? "unlocked" : "locked") + '">' +
+      '<div class="ach-icon">' + a.icon + '</div>' +
+      '<div class="ach-body">' +
+      '<div class="ach-name">' + escapeHtml(a.name) + '</div>' +
+      '<div class="ach-desc">' + escapeHtml(a.desc) + '</div>' +
+      (unlocked ? '<div class="ach-status">Unlocked</div>' : '<div class="ach-progress">' + val + '/' + a.target + '</div>') +
+      '</div></div>'
+    );
+  }).join("");
+  document.getElementById("achGrid").innerHTML = html;
+  document.getElementById("achCount").textContent = " (" + unlockedCount + "/" + ACHIEVEMENTS.length + ")";
+  document.getElementById("achievementsToggle").textContent = "🏆 " + unlockedCount + "/" + ACHIEVEMENTS.length;
+}
+
+document.getElementById("achievementsToggle").addEventListener("click", function () {
+  var panel = document.getElementById("achievementsPanel");
+  panel.hidden = !panel.hidden;
+  this.classList.toggle("active", !panel.hidden);
+});
+
+/* ---------- Storage ---------- */
+
+function load() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) data = JSON.parse(raw);
+  } catch (e) {
+    console.error("load failed", e);
+  }
+  if (!data.tasks) data.tasks = [];
+  if (!data.events) data.events = [];
+  var firstRun = !data.stats;
+  if (!data.stats) {
+    data.stats = {
+      tasksCompleted: data.tasks.filter(function (t) { return t.done; }).length,
+      eventsAdded: data.events.length,
+      inboxZeroHit: false,
+      earlyBirdHit: false,
+      unlocked: {}
+    };
+  }
+  if (!data.stats.unlocked) data.stats.unlocked = {};
+  if (firstRun) evaluateAchievements(false); /* credit existing progress quietly */
+}
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error("save failed", e);
+  }
+}
+
+/* ---------- Tasks ---------- */
+
+function taskDateTime(t) {
+  if (!t.due) return null;
+  return new Date(t.due + "T" + (t.dueTime || "23:59") + ":00");
+}
+function taskSortKey(t) {
+  if (!t.due) return "9999-99-99T99:99";
+  return t.due + "T" + (t.dueTime || "00:00");
+}
+function dueBadge(t) {
+  if (!t.due) return "";
+  var status = "";
+  if (!t.done) {
+    var dt = taskDateTime(t);
+    if (dt && dt.getTime() < now.getTime()) status = "overdue";
+    else if (t.due === todayISO) status = "today";
+  }
+  var cls = "time-badge clickable" + (status ? " " + status : "");
+  var label = formatShort(t.due) + (t.dueTime ? " " + formatTime12(t.dueTime) : "");
+  return '<span class="' + cls + '" onclick="selectDay(\'' + t.due + '\')" title="Jump to this day">' + escapeHtml(label) + '</span>';
+}
+function taskRowHtml(t, i) {
+  return (
+    '<li class="item">' +
+    '<input type="checkbox" class="checkbox" ' + (t.done ? "checked" : "") + ' onchange="toggleTask(' + i + ')" aria-label="Mark task done">' +
+    '<span class="item-text ' + (t.done ? "done" : "") + '">' + escapeHtml(t.text) + '</span>' +
+    dueBadge(t) +
+    '<button class="del" onclick="deleteTask(' + i + ')" aria-label="Delete task">✕</button>' +
+    '</li>'
+  );
+}
+function dueSoonRowHtml(t, i, dt) {
+  var cd = countdownFor(dt, "Due in");
+  return (
+    '<li class="item">' +
+    '<input type="checkbox" class="checkbox" ' + (t.done ? "checked" : "") + ' onchange="toggleTask(' + i + ')" aria-label="Mark task done">' +
+    '<span class="item-text">' + escapeHtml(t.text) + '</span>' +
+    dueBadge(t) +
+    '<span class="countdown ' + cd.cls + '">' + cd.text + '</span>' +
+    '<button class="del" onclick="deleteTask(' + i + ')" aria-label="Delete task">✕</button>' +
+    '</li>'
+  );
+}
+
+function renderTasks() {
+  now = new Date();
+  var taskList = document.getElementById("taskList");
+  document.getElementById("taskCount").textContent =
+    data.tasks.length ? " (" + data.tasks.filter(function (t) { return !t.done; }).length + " open)" : "";
+
+  if (data.tasks.length === 0) {
+    taskList.innerHTML = '<li class="empty">No tasks yet — add one below.</li>';
+  } else {
+    var order = data.tasks.map(function (t, i) { return i; });
+    order.sort(function (ai, bi) {
+      var a = data.tasks[ai], b = data.tasks[bi];
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      var ak = taskSortKey(a), bk = taskSortKey(b);
+      return ak < bk ? -1 : (ak > bk ? 1 : 0);
+    });
+    taskList.innerHTML = order.map(function (i) { return taskRowHtml(data.tasks[i], i); }).join("");
+  }
+}
+
+function renderDueSoon() {
+  var horizon = now.getTime() + 24 * 60 * 60 * 1000;
+  var due = [];
+  data.tasks.forEach(function (t, i) {
+    if (t.done || !t.due) return;
+    var dt = taskDateTime(t);
+    if (dt && dt.getTime() <= horizon) due.push({ t: t, i: i, dt: dt });
+  });
+  due.sort(function (a, b) { return a.dt.getTime() - b.dt.getTime(); });
+
+  var box = document.getElementById("dueSoonCallout");
+  box.classList.toggle("neutral", due.length === 0);
+  document.getElementById("dueSoonHead").textContent = due.length === 0 ? "✓ Due Soon" : "⚠ Due Soon (" + due.length + ")";
+
+  var list = document.getElementById("dueSoonList");
+  list.innerHTML = due.length === 0
+    ? '<li class="callout-empty">Nothing happening soon.</li>'
+    : due.map(function (e) { return dueSoonRowHtml(e.t, e.i, e.dt); }).join("");
+}
+
+function toggleTask(i) {
+  var wasDone = data.tasks[i].done;
+  data.tasks[i].done = !wasDone;
+
+  if (!wasDone) {
+    data.stats.tasksCompleted += 1;
+    if (now.getHours() < 8) data.stats.earlyBirdHit = true;
+    if (data.tasks.length > 0 && data.tasks.every(function (t) { return t.done; })) data.stats.inboxZeroHit = true;
+  }
+
+  save();
+  renderTasks();
+  renderDueSoon();
+  renderCalendar();
+  renderDayPanel();
+  evaluateAchievements(true);
+}
+function deleteTask(i) {
+  data.tasks.splice(i, 1);
+  save();
+  renderTasks();
+  renderDueSoon();
+  renderCalendar();
+  renderDayPanel();
+}
+
+document.getElementById("taskForm").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  var input = document.getElementById("taskInput");
+  var dueInput = document.getElementById("taskDueInput");
+  var timeInput = document.getElementById("taskTimeInput");
+  var val = input.value.trim();
+  if (!val) return;
+  data.tasks.push({
+    text: val,
+    done: false,
+    due: dueInput.value || null,
+    dueTime: dueInput.value ? (timeInput.value || null) : null
+  });
+  input.value = "";
+  dueInput.value = "";
+  timeInput.value = "";
+  save();
+  renderTasks();
+  renderDueSoon();
+  renderCalendar();
+  renderDayPanel();
+});
+
+/* ---------- Calendar ---------- */
+
+function eventsOn(iso) { return data.events.filter(function (e) { return e.date === iso; }); }
+function tasksDueOn(iso) {
+  var out = [];
+  data.tasks.forEach(function (t, i) { if (t.due === iso) out.push({ t: t, i: i }); });
+  return out;
+}
+function eventDateTime(e) { return new Date(e.date + "T" + (e.time || "00:00") + ":00"); }
+
+function renderCalendar() {
+  document.getElementById("calMonthLabel").textContent = MONTHS[viewMonth] + " " + viewYear;
+  var grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+
+  var firstOfMonth = new Date(viewYear, viewMonth, 1);
+  var startWeekday = firstOfMonth.getDay();
+  var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  var daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+  var totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+
+  for (var i = 0; i < totalCells; i++) {
+    var cell = document.createElement("div");
+    cell.className = "cal-cell";
+    var dayNum, cellYear = viewYear, cellMonth = viewMonth;
+
+    if (i < startWeekday) {
+      dayNum = daysInPrevMonth - startWeekday + 1 + i;
+      cellMonth = viewMonth - 1;
+      if (cellMonth < 0) { cellMonth = 11; cellYear -= 1; }
+      cell.classList.add("other-month");
+    } else if (i >= startWeekday + daysInMonth) {
+      dayNum = i - startWeekday - daysInMonth + 1;
+      cellMonth = viewMonth + 1;
+      if (cellMonth > 11) { cellMonth = 0; cellYear += 1; }
+      cell.classList.add("other-month");
+    } else {
+      dayNum = i - startWeekday + 1;
+    }
+
+    var iso = toISO(cellYear, cellMonth, dayNum);
+    if (iso === todayISO) cell.classList.add("is-today");
+    if (iso === selectedDate) cell.classList.add("selected");
+
+    var dayEvents = eventsOn(iso);
+    var dayTasks = tasksDueOn(iso);
+    var total = dayEvents.length + dayTasks.length;
+    var dotsHtml = "";
+    var slots = 3;
+    var shownEvents = Math.min(dayEvents.length, slots);
+    for (var d = 0; d < shownEvents; d++) dotsHtml += '<span class="cal-dot"></span>';
+    slots -= shownEvents;
+    var shownTasks = Math.min(dayTasks.length, slots);
+    for (var d2 = 0; d2 < shownTasks; d2++) dotsHtml += '<span class="cal-dot task"></span>';
+    var moreHtml = total > 3 ? '<span class="cal-more">+' + (total - 3) + '</span>' : "";
+
+    cell.innerHTML = '<span class="cal-daynum">' + dayNum + '</span><span class="cal-dots">' + dotsHtml + moreHtml + '</span>';
+    cell.addEventListener("click", (function (isoClicked) { return function () { selectDay(isoClicked); }; })(iso));
+    grid.appendChild(cell);
+  }
+}
+
+function selectDay(iso) {
+  selectedDate = iso;
+  var parts = iso.split("-");
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1;
+  if (m !== viewMonth || y !== viewYear) { viewMonth = m; viewYear = y; }
+  renderCalendar();
+  renderDayPanel();
+}
+
+function eventRowHtml(e, i) {
+  var badgeClass = "time-badge event" + (e.time ? "" : " allday");
+  var label = e.time ? formatTime12(e.time) : "All day";
+  return (
+    '<li class="item">' +
+    '<span class="' + badgeClass + '">' + escapeHtml(label) + '</span>' +
+    '<span class="item-text">' + escapeHtml(e.text) + '</span>' +
+    '<button class="del" onclick="deleteEvent(' + i + ')" aria-label="Delete event">✕</button>' +
+    '</li>'
+  );
+}
+function soonEventRowHtml(e, i, dt, isOngoingAllDay) {
+  var badgeClass = "time-badge event clickable" + (e.time ? "" : " allday");
+  var label = e.time ? formatTime12(e.time) : "All day";
+  var dateLabel = formatShort(e.date) + " · ";
+  var cd = isOngoingAllDay ? { text: "Ongoing today", cls: "ongoing" } : countdownFor(dt, "Starts in");
+  return (
+    '<li class="item">' +
+    '<span class="' + badgeClass + '" onclick="selectDay(\'' + e.date + '\')" title="Jump to this day">' + dateLabel + escapeHtml(label) + '</span>' +
+    '<span class="item-text">' + escapeHtml(e.text) + '</span>' +
+    '<span class="countdown ' + cd.cls + '">' + cd.text + '</span>' +
+    '<button class="del" onclick="deleteEvent(' + i + ')" aria-label="Delete event">✕</button>' +
+    '</li>'
+  );
+}
+
+function renderDayPanel() {
+  var parts = selectedDate.split("-");
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, d = parseInt(parts[2], 10);
+  var dateObj = new Date(y, m, d);
+  var label = WEEKDAYS_LONG[dateObj.getDay()] + ", " + MONTHS_SHORT[m] + " " + d;
+  if (selectedDate === todayISO) label += " (today)";
+  document.getElementById("dayPanelTitle").textContent = label;
+
+  var list = document.getElementById("dayEventList");
+  var entries = [];
+  data.events.forEach(function (e, i) { if (e.date === selectedDate) entries.push({ e: e, i: i }); });
+  entries.sort(function (a, b) {
+    var at = a.e.time || "", bt = b.e.time || "";
+    if (at === "" && bt === "") return 0;
+    if (at === "") return -1;
+    if (bt === "") return 1;
+    return at < bt ? -1 : (at > bt ? 1 : 0);
+  });
+  list.innerHTML = entries.length === 0
+    ? '<li class="empty">No events on this day.</li>'
+    : entries.map(function (entry) { return eventRowHtml(entry.e, entry.i); }).join("");
+
+  var taskEntries = tasksDueOn(selectedDate);
+  var taskListEl = document.getElementById("dayTaskList");
+  var taskHeadEl = document.getElementById("dayTasksHead");
+  if (taskEntries.length === 0) {
+    taskHeadEl.style.display = "none";
+    taskListEl.innerHTML = "";
+  } else {
+    taskHeadEl.style.display = "";
+    taskListEl.innerHTML = taskEntries.map(function (entry) { return taskRowHtml(entry.t, entry.i); }).join("");
+  }
+
+  document.getElementById("eventDateInput").value = selectedDate;
+}
+
+function renderSoonEvents() {
+  var horizon = now.getTime() + 48 * 60 * 60 * 1000;
+  var soon = [];
+  data.events.forEach(function (e, i) {
+    var dt = eventDateTime(e);
+    var isOngoingAllDay = !e.time && e.date === todayISO;
+    if (isOngoingAllDay || (dt.getTime() >= now.getTime() && dt.getTime() <= horizon)) {
+      soon.push({ e: e, i: i, dt: dt, ongoing: isOngoingAllDay });
+    }
+  });
+  soon.sort(function (a, b) { return a.dt.getTime() - b.dt.getTime(); });
+
+  var box = document.getElementById("soonEventsCallout");
+  box.classList.toggle("neutral", soon.length === 0);
+  document.getElementById("soonEventsHead").textContent = soon.length === 0 ? "✓ Happening Soon" : "🕓 Happening Soon (" + soon.length + ")";
+
+  var list = document.getElementById("soonEventsList");
+  list.innerHTML = soon.length === 0
+    ? '<li class="callout-empty">Nothing happening soon.</li>'
+    : soon.map(function (entry) { return soonEventRowHtml(entry.e, entry.i, entry.dt, entry.ongoing); }).join("");
+}
+
+function deleteEvent(i) {
+  data.events.splice(i, 1);
+  save();
+  renderCalendar();
+  renderDayPanel();
+  renderSoonEvents();
+}
+
+document.getElementById("eventDateInput").addEventListener("change", function () {
+  if (this.value) selectDay(this.value);
+});
+
+document.getElementById("eventForm").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  var input = document.getElementById("eventInput");
+  var dateInput = document.getElementById("eventDateInput");
+  var timeInput = document.getElementById("eventTimeInput");
+  var val = input.value.trim();
+  if (!val) return;
+  var targetDate = dateInput.value || selectedDate;
+  data.events.push({ date: targetDate, time: timeInput.value || null, text: val });
+  data.stats.eventsAdded += 1;
+  input.value = "";
+  timeInput.value = "";
+  save();
+  if (targetDate !== selectedDate) selectDay(targetDate);
+  renderCalendar();
+  renderDayPanel();
+  renderSoonEvents();
+  evaluateAchievements(true);
+});
+
+document.getElementById("prevMonthBtn").addEventListener("click", function () {
+  viewMonth -= 1;
+  if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
+  renderCalendar();
+});
+document.getElementById("nextMonthBtn").addEventListener("click", function () {
+  viewMonth += 1;
+  if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
+  renderCalendar();
+});
+document.getElementById("todayBtn").addEventListener("click", function () {
+  viewYear = now.getFullYear();
+  viewMonth = now.getMonth();
+  selectDay(todayISO);
+});
+
+document.getElementById("todayReadout").textContent =
+  WEEKDAYS[now.getDay()] + " " + MONTHS_SHORT[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
+
+initTheme();
+initMusic();
+load();
+renderTasks();
+renderCalendar();
+renderDayPanel();
+renderDueSoon();
+renderSoonEvents();
+renderAchievements();
+
+/* Live, second-by-second countdowns */
+setInterval(function () {
+  now = new Date();
+  renderDueSoon();
+  renderSoonEvents();
+}, 1000);
+
+/* Slower full refresh: main list coloring, today's cell, date readout, midnight rollover */
+setInterval(function () {
+  now = new Date();
+  var freshToday = toISO(now.getFullYear(), now.getMonth(), now.getDate());
+  if (freshToday !== todayISO) todayISO = freshToday;
+  renderTasks();
+  renderCalendar();
+  renderDayPanel();
+  document.getElementById("todayReadout").textContent =
+    WEEKDAYS[now.getDay()] + " " + MONTHS_SHORT[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
+}, 30000);
+</script>
+
+</body>
+</html>
